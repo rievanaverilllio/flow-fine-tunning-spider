@@ -1,0 +1,13 @@
+# Jalankan
+git clone https://github.com/huggingface/transformers.git
+
+
+# Jalankan
+python transformers/src/transformers/models/llama/convert_llama_weights_to_hf.py --input_dir "D:/Vann/TA (SKRIPSI)/Project/Llama-2-7b-chat" --model_size 7B --output_dir "D:/Vann/TA (SKRIPSI)/Project/Llama-2-7b-chat-HF"
+
+# create
+mkdir D:\Temp-Folder
+
+# jalankan di powershell
+$env:TEMP = "D:\Temp-Folder"
+$env:TMP = "D:\Temp-Folder"

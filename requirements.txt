@@ -1,0 +1,18 @@
+# Runtime (API server & client)
+fastapi
+uvicorn[standard]
+requests
+llama-cpp-python
+
+# Training / Fine-tuning (LoRA)
+torch
+transformers==4.57.1
+peft==0.10.0
+trl==0.8.6
+bitsandbytes>=0.43.0
+accelerate>=0.30.0
+datasets>=2.18.0
+sentencepiece>=0.1.99
+safetensors>=0.4.2
+tqdm>=4.66.0
+huggingface_hub>=0.23.0

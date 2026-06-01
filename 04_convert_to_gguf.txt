@@ -1,0 +1,8 @@
+# 1
+git clone https://github.com/ggerganov/llama.cpp
+
+# 2
+python "D:\Vann\TA (SKRIPSI)\Project\Run-LLM\llama.cpp\convert_hf_to_gguf.py" ^
+  "D:\Vann\TA (SKRIPSI)\Project\Run-LLM\merged-llama3-sql" ^
+  --outfile "D:\Vann\TA (SKRIPSI)\Project\Run-LLM\merged-llama3-instruct-sql.Q8_0.gguf" ^
+  --outtype f32
