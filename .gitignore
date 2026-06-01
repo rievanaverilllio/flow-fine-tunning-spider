@@ -48,9 +48,9 @@ logs/
 # Model and data artifacts
 model-gguf/
 dataset/
-hasil-finetune-cot/
-llama-sql-cot-adapter-cpu/
+llama-sql-adapter-cpu/
 merged-llama3-sql/
+finetune-output/
 llama.cpp/
 transformers/
 *.safetensors

@@ -11,7 +11,7 @@ from trl import SFTTrainer
 MODEL_PATH = r"D:\Vann\TA (SKRIPSI)\Project\Llama-3.2-3B-Instruct"
 TRAIN_FILE = "dataset/train-00000-of-00001.parquet"
 VALID_FILE = "dataset/validation-00000-of-00001.parquet"
-OUTPUT_DIR = "./hasil-finetune"
+OUTPUT_DIR = "./finetune-output"
 
 # ==============================
 # 2. Load Model & Tokenizer
@@ -71,14 +71,14 @@ print("Sample data:\n", dataset['train'][0]['text'])
 # ==============================
 training_args = TrainingArguments(
     output_dir=OUTPUT_DIR,
-    num_train_epochs=1,
+    num_train_epochs=3,
     per_device_train_batch_size=1,    # CPU: batch size 1
     gradient_accumulation_steps=4,    # gradient accumulation for efficiency
     learning_rate=2e-5,
     logging_steps=50,
     save_total_limit=2,
     save_strategy="steps",
-    save_steps=200,
+    save_steps=100,
     report_to="none",
     fp16=False,    # CPU does not support fp16
     bf16=False,

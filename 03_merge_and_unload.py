@@ -4,7 +4,7 @@ from tqdm import tqdm
 import time
 
 base_model_path = "D:\Vann\TA (SKRIPSI)\Project\Llama-3.2-3B-Instruct"
-adapter_path = "./llama-sql-cot-adapter-cpu"
+adapter_path = "./llama-sql-adapter-cpu"
 merged_path = "./merged-llama3-sql"
 
 print("="*60)

@@ -134,6 +134,6 @@ else:
 # ==============================
 # 8. Simpan Adapter
 # ==============================
-adapter_dir = "./llama-sql-cot-adapter-cpu"
+adapter_dir = "./llama-sql-adapter-cpu"
 trainer.model.save_pretrained(adapter_dir)
 print(f"Fine-tuning selesai. Adapter disimpan di: {adapter_dir}")
