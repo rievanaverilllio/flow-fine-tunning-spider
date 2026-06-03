@@ -8,6 +8,7 @@ python transformers/src/transformers/models/llama/convert_llama_weights_to_hf.py
 # create
 mkdir D:\Temp-Folder
 
+
 # jalankan di powershell
 $env:TEMP = "D:\Temp-Folder"
 $env:TMP = "D:\Temp-Folder"
