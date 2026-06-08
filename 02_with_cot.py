@@ -1,7 +1,8 @@
 import os
+import json
 import torch
 from datasets import load_dataset
-from transformers import AutoModelForCausalLM, AutoTokenizer, TrainingArguments
+from transformers import AutoModelForCausalLM, AutoTokenizer, TrainingArguments, TrainerCallback
 from peft import LoraConfig, get_peft_model
 from trl import SFTTrainer
 
@@ -12,6 +13,7 @@ MODEL_PATH = r"D:\Vann\TA (SKRIPSI)\Project\Llama-3.2-3B-Instruct"
 TRAIN_FILE = "dataset/train-00000-of-00001.parquet"
 VALID_FILE = "dataset/validation-00000-of-00001.parquet"
 OUTPUT_DIR = "./hasil-finetune-cot"
+SAVE_STEPS = 100
 
 # ==============================
 # 2. Load Model & Tokenizer
@@ -55,14 +57,14 @@ dataset = load_dataset("parquet", data_files={'train': TRAIN_FILE, 'validation':
 
 def preprocess_cot(sample):
     cot_prompt = f"""
-### Pertanyaan:
+### Question:
 {sample['question']}
 
-### Penalaran:
-1. Identifikasi tabel yang relevan.
-2. Identifikasi kolom / entitas yang digunakan.
-3. Tentukan operasi SQL yang sesuai (SELECT, JOIN, GROUP BY, AGGREGATE, dsb.)
-4. Tulis SQL final berdasarkan langkah-langkah di atas.
+### Reasoning:
+1. Identify the relevant tables.
+2. Identify the columns / entities used.
+3. Determine the appropriate SQL operations (SELECT, JOIN, GROUP BY, AGGREGATE, etc.)
+4. Write the final SQL based on the steps above.
 
 ### SQL:
 {sample['query']}
@@ -71,6 +73,64 @@ def preprocess_cot(sample):
 
 dataset = dataset.map(preprocess_cot, remove_columns=list(dataset['train'].features))
 print("Contoh data:\n", dataset['train'][0]['text'])
+
+
+def load_loss_history(file_path):
+    if os.path.exists(file_path):
+        with open(file_path, "r", encoding="utf-8") as file_handle:
+            try:
+                history = json.load(file_handle)
+                return history if isinstance(history, list) else []
+            except json.JSONDecodeError:
+                return []
+    return []
+
+
+def save_loss_history(file_path, history):
+    with open(file_path, "w", encoding="utf-8") as file_handle:
+        json.dump(history, file_handle, indent=2)
+
+
+class LossHistoryCallback(TrainerCallback):
+    def __init__(self, output_dir):
+        self.output_dir = output_dir
+        os.makedirs(self.output_dir, exist_ok=True)
+        self.train_loss_file = os.path.join(output_dir, "train_loss.json")
+        self.validation_loss_file = os.path.join(output_dir, "validation_loss.json")
+        self.train_loss_history = load_loss_history(self.train_loss_file)
+        self.validation_loss_history = load_loss_history(self.validation_loss_file)
+        self.pending_logs = {}
+
+    def _flush_if_ready(self, step):
+        pending = self.pending_logs.get(step, {})
+        train_loss = pending.get("train_loss")
+        validation_loss = pending.get("validation_loss")
+
+        if train_loss is not None and validation_loss is not None:
+            print(f"[step {step}] train_loss={train_loss:.6f} validation_loss={validation_loss:.6f}")
+            self.train_loss_history.append({"step": step, "loss": train_loss})
+            self.validation_loss_history.append({"step": step, "loss": validation_loss})
+            save_loss_history(self.train_loss_file, self.train_loss_history)
+            save_loss_history(self.validation_loss_file, self.validation_loss_history)
+            del self.pending_logs[step]
+
+    def on_log(self, args, state, control, logs=None, **kwargs):
+        if not logs or "loss" not in logs:
+            return control
+
+        step = state.global_step
+        self.pending_logs.setdefault(step, {})["train_loss"] = float(logs["loss"])
+        self._flush_if_ready(step)
+        return control
+
+    def on_evaluate(self, args, state, control, metrics=None, **kwargs):
+        if not metrics or "eval_loss" not in metrics:
+            return control
+
+        step = state.global_step
+        self.pending_logs.setdefault(step, {})["validation_loss"] = float(metrics["eval_loss"])
+        self._flush_if_ready(step)
+        return control
 
 # ==============================
 # 5. Training Arguments CPU
@@ -81,10 +141,12 @@ training_args = TrainingArguments(
     per_device_train_batch_size=1,    # CPU: batch 1
     gradient_accumulation_steps=4,    # akumulasi gradient agar efektif
     learning_rate=2e-5,
-    logging_steps=50,
+    logging_steps=SAVE_STEPS,
     save_total_limit=2,
     save_strategy="steps",
-    save_steps=200,
+    save_steps=SAVE_STEPS,
+    eval_strategy="steps",
+    eval_steps=SAVE_STEPS,
     report_to="none",
     fp16=False,    # CPU tidak mendukung fp16
     bf16=False,
@@ -103,6 +165,7 @@ trainer = SFTTrainer(
     max_seq_length=256,   # lebih pendek untuk CPU
     tokenizer=tokenizer,
     args=training_args,
+    callbacks=[LossHistoryCallback(OUTPUT_DIR)],
 )
 
 # ==============================

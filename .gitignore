@@ -51,6 +51,7 @@ dataset/
 llama-sql-adapter-cpu/
 merged-llama3-sql/
 finetune-output/
+hasil-finetune-cot/
 llama.cpp/
 transformers/
 *.safetensors
